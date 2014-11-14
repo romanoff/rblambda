@@ -11,6 +11,13 @@ var syntaxtests = []struct {
 }{
 	{"-> { 4 }", "lambda { 4 }", true},
 	{"lambda { 4 }", "lambda { 4 }", false},
+	{"-> (x) { 4 }", "lambda { |x| 4 }", true},
+	{"-> () { 4 }", "lambda { 4 }", true},
+	{`-> do |x|
+a = 5 if x == true
+end`, `lambda do |x|
+a = 5 if x == true
+end`, true},
 }
 
 func TestForceOldSyntax(t *testing.T) {

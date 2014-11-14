@@ -24,8 +24,59 @@ func updateToOldSyntax() {
 	})
 }
 
-func forceOldSyntax(content []byte) ([]byte, bool) {
-	return content, false
+type Contentable interface {
+	GetContent() []byte
+}
+
+type Content struct {
+	Tokens []Contentable
+}
+
+func (self *Content) GetContent() []byte {
+	contentBytes := []byte{}
+	for _, token := range self.Tokens {
+		contentBytes = append(contentBytes, token.GetContent()...)
+	}
+	return contentBytes
+}
+
+type ContentToken struct {
+	Content []byte
+}
+
+func (self *ContentToken) GetContent() []byte {
+	return self.Content
+}
+
+func forceOldSyntax(fileContent []byte) ([]byte, bool) {
+	content := &Content{Tokens: make([]Contentable, 0)}
+	token := &ContentToken{Content: []byte{}}
+	content.Tokens = append(content.Tokens, token)
+	fileContentLength := len(fileContent)
+	changed := false
+	for i := 0; i < fileContentLength; i++ {
+		if fileContentLength > i+3 {
+			twoSymbols := string(fileContent[i]) + string(fileContent[i+1])
+			if twoSymbols == "->" || twoSymbols == "la" {
+				lt := &LambdaToken{}
+				j, err := lt.Parse(i, fileContent)
+				if lt.OldSyntax == false {
+					changed = true
+				}
+				if err == nil {
+					lt.OldSyntax = true
+					content.Tokens = append(content.Tokens, lt)
+					token = &ContentToken{Content: []byte{}}
+					content.Tokens = append(content.Tokens, token)
+					i = j
+				}
+			}
+		}
+		if i < fileContentLength {
+			token.Content = append(token.Content, fileContent[i])
+		}
+	}
+	return content.GetContent(), changed
 }
 
 func walkRubyFiles(callback func(string, os.FileMode)) {
