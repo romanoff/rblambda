@@ -60,7 +60,7 @@ func forceOldSyntax(fileContent []byte) ([]byte, bool) {
 			if twoSymbols == "->" || twoSymbols == "la" {
 				lt := &LambdaToken{}
 				j, err := lt.Parse(i, fileContent)
-				if lt.OldSyntax == false {
+				if err == nil && lt.OldSyntax == false {
 					changed = true
 				}
 				if err == nil {

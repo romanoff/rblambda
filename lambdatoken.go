@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 func byteEquals(s string, i int, content []byte) bool {
@@ -58,6 +58,9 @@ func (self *LambdaToken) Parse(i int, content []byte) (int, error) {
 					self.Params = []string{}
 				} else {
 					self.Params = strings.Split(buffer, ",")
+					for k := 0; k < len(self.Params); k++ {
+						self.Params[k] = strings.TrimSpace(self.Params[k])
+					}
 				}
 				break
 			}
@@ -102,12 +105,18 @@ func (self *LambdaToken) Parse(i int, content []byte) (int, error) {
 				j += 4
 				buffer += "begi"
 			}
-			// TODO: check for if and end
-			// if byteEquals("if", j, content) {
-			// 	clauseCounter++
-			// 	i += 1
-			// 	buffer += "i"
-			// }
+			if byteEquals("if", j, content) {
+				prefix := []byte{}
+				for k := j - 1; k > 0 && content[k] != byte('\n'); k-- {
+					prefix = append(prefix, content[k])
+				}
+				matched, err := regexp.Match("^\\s*$", prefix)
+				if err == nil && matched {
+					clauseCounter++
+					j += 1
+					buffer += "i"
+				}
+			}
 			if byteEquals("end", j, content) {
 				clauseCounter--
 				j += 2
@@ -128,6 +137,9 @@ func (self *LambdaToken) Parse(i int, content []byte) (int, error) {
 	matches := blockVariablesRegexp.FindStringSubmatch(buffer)
 	if len(matches) == 3 {
 		self.Params = strings.Split(matches[1], ",")
+		for k := 0; k < len(self.Params); k++ {
+			self.Params[k] = strings.TrimSpace(self.Params[k])
+		}
 		buffer = matches[2]
 	}
 	self.Content = []byte(buffer)
@@ -157,9 +169,9 @@ func (self *LambdaToken) GetContent() []byte {
 			content = append(content, []byte(" |"+strings.Join(self.Params, ", ")+"|")...)
 		}
 	} else {
-		content = append(content, []byte("->")...)
+		content = append(content, []byte("-> ")...)
 		if len(self.Params) > 0 {
-			content = append(content, []byte(" ("+strings.Join(self.Params, ", ")+") ")...)
+			content = append(content, []byte("("+strings.Join(self.Params, ", ")+") ")...)
 		}
 		content = append(content, self.OpenBlockToken()...)
 	}

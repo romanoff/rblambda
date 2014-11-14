@@ -18,6 +18,17 @@ a = 5 if x == true
 end`, `lambda do |x|
 a = 5 if x == true
 end`, true},
+	{`-> do |x|
+  true if true
+  if x == true
+    a = 5
+  end
+end`, `lambda do |x|
+  true if true
+  if x == true
+    a = 5
+  end
+end`, true},
 }
 
 func TestForceOldSyntax(t *testing.T) {
