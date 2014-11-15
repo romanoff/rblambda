@@ -24,7 +24,7 @@ type LambdaToken struct {
 	Content   []byte
 }
 
-var blockVariablesRegexp *regexp.Regexp = regexp.MustCompile("(?s)\\s*\\|([\\w\\,\\s]+)\\|(.*)")
+var blockVariablesRegexp *regexp.Regexp = regexp.MustCompile("(?s)^\\s*\\|([\\w\\,\\s]+)\\|(.*)")
 
 func (self *LambdaToken) Parse(i int, content []byte) (int, error) {
 	lambda := false
@@ -115,6 +115,18 @@ func (self *LambdaToken) Parse(i int, content []byte) (int, error) {
 					clauseCounter++
 					j += 1
 					buffer += "i"
+				}
+			}
+			if byteEquals("unless", j, content) {
+				prefix := []byte{}
+				for k := j - 1; k > 0 && content[k] != byte('\n'); k-- {
+					prefix = append(prefix, content[k])
+				}
+				matched, err := regexp.Match("^\\s*$", prefix)
+				if err == nil && matched {
+					clauseCounter++
+					j += 5
+					buffer += "unles"
 				}
 			}
 			if byteEquals("end", j, content) {
